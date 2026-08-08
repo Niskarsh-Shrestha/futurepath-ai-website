@@ -17,13 +17,19 @@ export async function registerUser(formData: unknown): Promise<RegisterResult> {
   const parsed = registerSchema.safeParse(formData);
 
   if (!parsed.success) {
+    console.log("[Register] Validation failed:", parsed.error.flatten());
     return { success: false, error: "Invalid form data" };
   }
 
   const { firstName, lastName, email, password } = parsed.data;
 
+  console.log("[Register] Attempting registration for email:", JSON.stringify(email));
+  console.log("[Register] DATABASE_URL host (redacted):", process.env.DATABASE_URL?.split("@")[1]?.split("/")[0]);
+
   try {
     const existingUser = await db.user.findUnique({ where: { email } });
+    console.log("[Register] findUnique result:", existingUser ? { id: existingUser.id, email: existingUser.email, createdAt: existingUser.createdAt } : null);
+
     if (existingUser) {
       return { success: false, error: "An account with this email already exists" };
     }
@@ -33,6 +39,7 @@ export async function registerUser(formData: unknown): Promise<RegisterResult> {
     const user = await db.user.create({
       data: { firstName, lastName, email, passwordHash },
     });
+    console.log("[Register] User created:", user.id, user.email);
 
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_HOURS * 60 * 60 * 1000);
@@ -49,9 +56,6 @@ export async function registerUser(formData: unknown): Promise<RegisterResult> {
         console.error(`Verification email failed to send to ${user.email}: ${emailResult.error}`);
       }
     } catch (emailErr) {
-      // Email failure should never fail registration — the account
-      // and token already exist, so the user can still be verified
-      // later via a resend flow.
       console.error("[Register] Email sending threw unexpectedly:", emailErr);
     }
 
