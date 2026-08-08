@@ -22,7 +22,7 @@ const PLANS = [
   },
   {
     name: "Premium Monthly",
-    price: "$19",
+    price: "$9.99",
     period: "/month",
     description: "Full access, billed monthly.",
     features: [
@@ -37,7 +37,7 @@ const PLANS = [
   },
   {
     name: "Premium Annual",
-    price: "$180",
+    price: "$89.99",
     period: "/year",
     description: "Same as monthly, 2 months free.",
     features: [
