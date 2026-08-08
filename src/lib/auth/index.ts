@@ -1,19 +1,23 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 
-import { authConfig } from "@/lib/auth/config";
+import { authConfig } from "@/lib/auth.config";
 import { CustomPrismaAdapter } from "@/lib/auth/adapter";
 import { db } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth/password";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const {
+  handlers,
+  auth,
+  signIn,
+  signOut,
+} = NextAuth({
   ...authConfig,
 
   adapter: CustomPrismaAdapter(),
 
   providers: [
-    ...(authConfig.providers ?? []),
-
     Credentials({
       name: "credentials",
 
@@ -61,6 +65,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: `${user.firstName} ${user.lastName}`,
           role: user.role,
           emailVerified: user.emailVerified,
+        };
+      },
+    }),
+
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          emailVerified: profile.email_verified
+            ? new Date()
+            : null,
         };
       },
     }),
