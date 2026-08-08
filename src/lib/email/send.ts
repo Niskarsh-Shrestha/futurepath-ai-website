@@ -1,4 +1,4 @@
-import { resend } from "@/lib/email/resend";
+import { getResendClient } from "@/lib/email/resend";
 import { VerifyEmailTemplate } from "@/lib/email/templates/verify-email";
 import { ResetPasswordTemplate } from "@/lib/email/templates/reset-password";
 
@@ -13,7 +13,7 @@ export async function sendVerificationEmail(
   verifyUrl: string
 ): Promise<SendResult> {
   try {
-    const { error } = await resend.emails.send({
+    const { error } = await getResendClient().emails.send({
       from: process.env.EMAIL_FROM as string,
       to,
       subject: "Verify your FuturePath AI email",
@@ -37,7 +37,7 @@ export async function sendPasswordResetEmail(
   resetUrl: string
 ): Promise<SendResult> {
   try {
-    const { error } = await resend.emails.send({
+    const { error } = await getResendClient().emails.send({
       from: process.env.EMAIL_FROM as string,
       to,
       subject: "Reset your FuturePath AI password",
