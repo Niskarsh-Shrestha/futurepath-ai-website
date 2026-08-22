@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { saveAnswer } from "@/actions/assessment/save-answer";
+import { saveAllAnswers } from "@/actions/assessment/save-all-answers";
 import { AssessmentLayout } from "@/components/assessment/assessment-layout";
 import { AssessmentSidebar } from "@/components/assessment/assessment-sidebar";
 import { AssessmentProgress, type SaveStatus } from "@/components/assessment/assessment-progress";
@@ -94,18 +95,30 @@ export function AssessmentRunner({
   }
 
   async function persistAllAnswers() {
-  // Cancel pending debounce timers because we're saving everything now.
+  // Cancel pending individual save timers.
   flushPendingSaves();
 
-  await Promise.all(
-    Object.entries(answers).map(([questionId, value]) =>
-      saveAnswer({
-        assessmentId,
-        questionId,
-        answer: value,
-      })
-    )
-  );
+  setSaveStatus("saving");
+
+  const result = await saveAllAnswers({
+    assessmentId,
+    answers,
+  });
+
+  if (!result.success) {
+    setSaveStatus("unsaved");
+
+    showToast(
+      result.error ?? "Failed to save assessment",
+      "error"
+    );
+
+    return false;
+  }
+
+  setSaveStatus("saved");
+
+  return true;
 }
 
   function validateCurrentSection(): boolean {
@@ -143,27 +156,40 @@ export function AssessmentRunner({
 
 async function handleReview() {
   if (!validateCurrentSection()) {
-    showToast("Please answer all required questions before continuing", "error");
+    showToast(
+      "Please answer all required questions before continuing",
+      "error"
+    );
     return;
   }
 
-  await persistAllAnswers();
+  const saved = await persistAllAnswers();
+
+  if (!saved) {
+    return;
+  }
 
   router.push(`/dashboard/assessment/${assessmentId}/review`);
 }
+
 async function handleSaveDraft() {
-  setSaveStatus("saving");
+  const saved = await persistAllAnswers();
 
-  await persistAllAnswers();
+  if (!saved) {
+    return;
+  }
 
-  setSaveStatus("saved");
   showToast("Draft saved");
 
   router.push("/dashboard/assessment");
 }
 
 async function handleExit() {
-  await persistAllAnswers();
+  const saved = await persistAllAnswers();
+
+  if (!saved) {
+    return;
+  }
 
   router.push("/dashboard/assessment");
 }
@@ -194,12 +220,13 @@ async function handleExit() {
       footer={
         <NavigationFooter
           onPrevious={handlePrevious}
-          onNext={handleNext}
-          onSaveDraft={handleSaveDraft}
-          onExit={handleExit}
-          onReview={handleReview}
-          isFirstSection={activeSection?.order === 1}
-          isLastSection={isLastSection(activeSectionId)}
+  onNext={handleNext}
+  onSaveDraft={handleSaveDraft}
+  onExit={handleExit}
+  onReview={handleReview}
+  isFirstSection={activeSection?.order === 1}
+  isLastSection={isLastSection(activeSectionId)}
+  isSaving={saveStatus === "saving"}
         />
       }
     >

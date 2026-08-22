@@ -48,9 +48,15 @@ export function NavigationFooter({
           </Button>
         )}
         {isLastSection ? (
-          <Button variant="primary" size="md" leftIcon={<ClipboardCheck className="h-4 w-4" />} onClick={onReview}>
-            Review Answers
-          </Button>
+          <Button
+  variant="primary"
+  size="md"
+  leftIcon={<ClipboardCheck className="h-4 w-4" />}
+  onClick={onReview}
+  loading={isSaving}
+>
+  Review Answers
+</Button>
         ) : (
           <Button variant="primary" size="md" rightIcon={<ChevronRight className="h-4 w-4" />} onClick={onNext}>
             Next
